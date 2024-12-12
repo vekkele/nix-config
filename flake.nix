@@ -5,9 +5,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin.url = "github:LnL7/nix-darwin";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
+    nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs }:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew }:
   let
     configuration = { pkgs, ... }: {
       # List packages installed in system profile. To search by name, run:
@@ -15,6 +16,40 @@
       environment.systemPackages =
         [ pkgs.vim
         ];
+
+      homebrew = {
+        enable = true;
+        casks = [
+          "bitwarden"
+          "zen-browser"
+          "firefox"
+          "google-chrome"
+          "wezterm"
+          "iina"
+          "qbittorrent"
+          "appcleaner"
+          "visual-studio-code"
+          "keepingyouawake"
+          "obsidian"
+          "karabiner-elements"
+          "raycast"
+          "raindropio"
+          "notion"
+          "discord"
+          "twingate"
+          "jordanbaird-ice"
+          "keycastr"
+          "telegram"
+        ];
+        masApps = {
+          "hidemynameVPN" = 1200692581;
+        };
+        onActivation = {
+          cleanup = "zap";
+          autoUpdate = true;
+          upgrade = true;
+        };
+      };
 
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
@@ -37,7 +72,19 @@
     # Build darwin flake using:
     # $ darwin-rebuild build --flake .#simple
     darwinConfigurations."simple" = nix-darwin.lib.darwinSystem {
-      modules = [ configuration ];
+      modules = [ 
+        configuration
+        nix-homebrew.darwinModules.nix-homebrew
+        {
+          nix-homebrew = {
+            enable = true;
+            enableRosetta = true;
+            user = "vlad";
+
+            autoMigrate = true;
+          };
+        }
+      ];
     };
   };
 }
